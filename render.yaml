@@ -1,0 +1,18 @@
+# https://render.com/docs/blueprint-spec
+# نشر static لـ Flutter Web — الملفات جاهزة محلياً (لا build على Render)
+# الخطوات: flutter build web ← ثم نسخ build/web/* إلى deploy/web (أو deploy/copy_web.ps1)
+
+services:
+  - type: web
+    name: isnad-web
+    runtime: static
+    rootDir: .
+    # فشل واضح إن نسيت نسخ مخرجات البناء
+    buildCommand: test -f deploy/web/index.html && test -f deploy/web/flutter_bootstrap.js
+    staticPublishPath: deploy/web
+    indexDocument: index.html
+    # منع 404 عند فتح رابط مباشر (مثلاً /login) — يعيد index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
