@@ -11,6 +11,10 @@ class NotificationService {
 
   static Future<void> initialize() async {
     if (_ready) return;
+    if (kIsWeb) {
+      _ready = true;
+      return;
+    }
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();
     const settings = InitializationSettings(android: android, iOS: ios);
@@ -31,6 +35,7 @@ class NotificationService {
     required String reporterName,
     required String location,
   }) async {
+    if (kIsWeb) return;
     await initialize();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -57,6 +62,7 @@ class NotificationService {
   }
 
   static Future<void> showNewReportAlert({required String reportId}) async {
+    if (kIsWeb) return;
     await initialize();
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
