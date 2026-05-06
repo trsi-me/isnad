@@ -11,6 +11,7 @@ import 'screens/soldier/injury_record_screen.dart';
 import 'screens/soldier/quick_report_screen.dart';
 import 'screens/soldier/report_status_screen.dart';
 import 'screens/soldier/soldier_home_screen.dart';
+import 'screens/shared/ai_insights_screen.dart';
 import 'screens/shared/notifications_screen.dart';
 import 'screens/shared/profile_screen.dart';
 
@@ -84,6 +85,17 @@ class _IsnadAppState extends State<IsnadApp> {
           }
           return MaterialPageRoute<void>(
             builder: (_) => ReportDetailScreen(reportId: id),
+            settings: settings,
+          );
+        }
+        if (settings.name == '/ai_insights') {
+          final args = settings.arguments;
+          int? reportId;
+          if (args is Map && args['reportId'] is int) {
+            reportId = args['reportId'] as int;
+          }
+          return MaterialPageRoute<void>(
+            builder: (_) => AiInsightsScreen(reportId: reportId),
             settings: settings,
           );
         }

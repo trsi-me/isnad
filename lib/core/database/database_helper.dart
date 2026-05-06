@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/report_reference.dart';
 import 'database_migrations.dart';
 
 class DatabaseHelper {
@@ -147,6 +148,51 @@ class DatabaseHelper {
         'created_at': now,
       },
       {
+        'military_id': '1013',
+        'full_name': 'جندي تركي الشهراني',
+        'role': 'soldier',
+        'unit': 'فصيلة رماية — كتيبة مشاة',
+        'phone': '0500000113',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1014',
+        'full_name': 'جندي أول سلمان العتيبي',
+        'role': 'soldier',
+        'unit': 'سرية إسناد — إمداد ذخيرة',
+        'phone': '0500000114',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1015',
+        'full_name': 'جندي نواف الحارثي',
+        'role': 'soldier',
+        'unit': 'كتيبة مشاة — دوريات نهارية',
+        'phone': '0500000115',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1016',
+        'full_name': 'جندي مشاري العنزي',
+        'role': 'soldier',
+        'unit': 'وحدة مسح ميداني — هندسة',
+        'phone': '0500000116',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1017',
+        'full_name': 'جندي أول عبدالرحمن المالكي',
+        'role': 'soldier',
+        'unit': 'سرية اتصالات — شبكة تكتيكية',
+        'phone': '0500000117',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
         'military_id': '2001',
         'full_name': 'قائد محمد التجريبي',
         'role': 'command',
@@ -195,7 +241,7 @@ class DatabaseHelper {
     }) async {
       final resolvedLocation = locationName ??
           (lat != null ? 'منطقة تبوك (تجريبي)' : null);
-      await db.insert('reports', {
+      final rowId = await db.insert('reports', {
         'report_uuid': reportUuid,
         'military_id': militaryId,
         'reporter_name': reporterName,
@@ -211,6 +257,12 @@ class DatabaseHelper {
         'created_at': now,
         'updated_at': now,
       });
+      await db.update(
+        'reports',
+        {'reference_code': ReportReference.format(rowId, now)},
+        where: 'id = ?',
+        whereArgs: [rowId],
+      );
     }
 
     final samples = <({
@@ -450,9 +502,73 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> _ensureExtraSoldiersPostV1(Database db) async {
+    final now = DateFormatter.nowIso();
+    final extras = <Map<String, Object?>>[
+      {
+        'military_id': '1013',
+        'full_name': 'جندي تركي الشهراني',
+        'role': 'soldier',
+        'unit': 'فصيلة رماية — كتيبة مشاة',
+        'phone': '0500000113',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1014',
+        'full_name': 'جندي أول سلمان العتيبي',
+        'role': 'soldier',
+        'unit': 'سرية إسناد — إمداد ذخيرة',
+        'phone': '0500000114',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1015',
+        'full_name': 'جندي نواف الحارثي',
+        'role': 'soldier',
+        'unit': 'كتيبة مشاة — دوريات نهارية',
+        'phone': '0500000115',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1016',
+        'full_name': 'جندي مشاري العنزي',
+        'role': 'soldier',
+        'unit': 'وحدة مسح ميداني — هندسة',
+        'phone': '0500000116',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+      {
+        'military_id': '1017',
+        'full_name': 'جندي أول عبدالرحمن المالكي',
+        'role': 'soldier',
+        'unit': 'سرية اتصالات — شبكة تكتيكية',
+        'phone': '0500000117',
+        'password_hash': 'soldier123',
+        'created_at': now,
+      },
+    ];
+    for (final u in extras) {
+      final mid = u['military_id']! as String;
+      final existing = await db.query(
+        'users',
+        where: 'military_id = ?',
+        whereArgs: [mid],
+        limit: 1,
+      );
+      if (existing.isEmpty) {
+        await db.insert('users', u);
+      }
+    }
+  }
+
   Future<Database> ensureSeeded() async {
     final db = await database;
     await _seedDatabase(db);
+    await _ensureExtraSoldiersPostV1(db);
     await _seedSampleReports(db);
     return db;
   }

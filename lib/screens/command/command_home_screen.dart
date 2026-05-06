@@ -90,20 +90,35 @@ class _CommandHomeScreenState extends State<CommandHomeScreen>
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: IsnadMiniButton(
-                    label: 'خريطة مباشرة',
-                    onTap: () => Navigator.of(context).pushNamed('/live_map'),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: IsnadMiniButton(
+                        label: 'خريطة مباشرة',
+                        onTap: () => Navigator.of(context).pushNamed('/live_map'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: IsnadMiniButton(
+                        label: 'تحليل ذكي',
+                        onTap: () => Navigator.of(context).pushNamed('/ai_insights'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: IsnadMiniButton(
-                    label: 'الملف الشخصي',
-                    onTap: () => Navigator.of(context).pushNamed('/profile'),
-                  ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: IsnadMiniButton(
+                        label: 'الملف الشخصي',
+                        onTap: () => Navigator.of(context).pushNamed('/profile'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -82,7 +82,7 @@ class ReportListItem extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'رقم البلاغ: ${report.reportUuid}',
+              'الرقم المرجعي: ${report.displayReference}',
               style: AppTextStyles.caption,
             ),
           ],

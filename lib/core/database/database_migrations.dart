@@ -3,7 +3,7 @@ import 'package:sqflite/sqflite.dart';
 class DatabaseMigrations {
   DatabaseMigrations._();
 
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   static Future<void> onCreate(Database db, int version) async {
     await db.execute('PRAGMA foreign_keys = ON');
@@ -15,6 +15,18 @@ class DatabaseMigrations {
     if (oldVersion < 1) {
       await _createV1(db);
     }
+    if (oldVersion < 2) {
+      await _upgradeToV2(db);
+    }
+  }
+
+  static Future<void> _upgradeToV2(Database db) async {
+    await db.execute('ALTER TABLE reports ADD COLUMN reference_code TEXT');
+    await db.execute('''
+UPDATE reports
+SET reference_code = 'BLG-' || substr(created_at, 1, 4) || '-' || printf('%06d', id)
+WHERE reference_code IS NULL
+''');
   }
 
   static Future<void> _createV1(Database db) async {
@@ -35,6 +47,7 @@ CREATE TABLE users (
 CREATE TABLE reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   report_uuid TEXT UNIQUE NOT NULL,
+  reference_code TEXT,
   military_id TEXT NOT NULL,
   reporter_name TEXT NOT NULL,
   injury_type TEXT NOT NULL,

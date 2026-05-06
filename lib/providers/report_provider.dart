@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../core/database/database_helper.dart';
 import '../core/enums/injury_type.dart';
 import '../core/enums/report_status.dart';
+import '../core/utils/report_reference.dart';
 import '../core/services/notification_service.dart';
 import '../core/utils/date_formatter.dart';
 import '../models/report_model.dart';
@@ -43,7 +44,7 @@ class ReportProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createReport(ReportModel report) async {
+  Future<ReportModel?> createReport(ReportModel report) async {
     try {
       final db = await DatabaseHelper.instance.database;
       final connected = await _hasConnection();
@@ -51,8 +52,18 @@ class ReportProvider extends ChangeNotifier {
         isSynced: connected,
         updatedAt: DateFormatter.nowIso(),
       );
-      final id = await db.insert('reports', toSave.toMap()..remove('id'));
-      final inserted = toSave.copyWith(id: id);
+      final row = Map<String, Object?>.from(toSave.toMap()..remove('id'))
+        ..remove('reference_code');
+      final id = await db.insert('reports', row);
+      final ref = ReportReference.format(id, toSave.createdAt);
+      final now = DateFormatter.nowIso();
+      await db.update(
+        'reports',
+        {'reference_code': ref, 'updated_at': now},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      final inserted = toSave.copyWith(id: id, referenceCode: ref, updatedAt: now);
       _reports = [inserted, ..._reports];
       if (connected) {
         await NotificationService.showNewReportAlert(
@@ -60,12 +71,12 @@ class ReportProvider extends ChangeNotifier {
         );
       }
       notifyListeners();
-      return true;
+      return inserted;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('createReport: $e');
       }
-      return false;
+      return null;
     }
   }
 
@@ -94,7 +105,7 @@ class ReportProvider extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-    return createReport(report);
+    return (await createReport(report)) != null;
   }
 
   Future<void> refreshReports() async {

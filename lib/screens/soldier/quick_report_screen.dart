@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart' as geo;
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -33,11 +35,19 @@ class QuickReportScreen extends StatefulWidget {
 class _QuickReportScreenState extends State<QuickReportScreen> {
   InjuryType _injury = InjuryType.other;
   final _descCtrl = TextEditingController();
+  final MapController _mapController = MapController();
   double? _lat;
   double? _lng;
   String? _coordsLabel;
   String? _imagePath;
   bool _sending = false;
+
+  static const LatLng _fallbackCenter = LatLng(28.3998, 36.5705);
+
+  LatLng get _pinOrCenter {
+    if (_lat != null && _lng != null) return LatLng(_lat!, _lng!);
+    return _fallbackCenter;
+  }
 
   @override
   void dispose() {
@@ -58,8 +68,9 @@ class _QuickReportScreenState extends State<QuickReportScreen> {
       _lat = pos.latitude;
       _lng = pos.longitude;
       _coordsLabel =
-          '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+          '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}\n(من GPS)';
     });
+    _mapController.move(LatLng(pos.latitude, pos.longitude), 15);
     try {
       final places = await geo.placemarkFromCoordinates(pos.latitude, pos.longitude);
       if (places.isNotEmpty && mounted) {
@@ -69,7 +80,7 @@ class _QuickReportScreenState extends State<QuickReportScreen> {
             .join('، ');
         if (name.isNotEmpty) {
           setState(() {
-            _coordsLabel = '$_coordsLabel\n$name';
+            _coordsLabel = '${_coordsLabel ?? ''}\n$name';
           });
         }
       }
@@ -114,12 +125,16 @@ class _QuickReportScreenState extends State<QuickReportScreen> {
       createdAt: now,
       updatedAt: now,
     );
-    final ok = await reportProv.createReport(report);
+    final saved = await reportProv.createReport(report);
     if (!mounted) return;
     setState(() => _sending = false);
-    if (ok) {
+    if (saved != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.reportSentSuccess)),
+        SnackBar(
+          content: Text(
+            '${AppStrings.reportSentSuccess} — المرجع: ${saved.displayReference}',
+          ),
+        ),
       );
       Navigator.of(context).pop();
     } else {
@@ -157,10 +172,75 @@ class _QuickReportScreenState extends State<QuickReportScreen> {
               onChanged: (v) => setState(() => _injury = v),
             ),
             const SizedBox(height: 16),
-            Text('الموقع', style: AppTextStyles.headline3),
+            Text('الموقع على الخريطة', style: AppTextStyles.headline3),
+            const SizedBox(height: 8),
+            Text(
+              'حدّث موقعك من الجهاز بعد فتح الخريطة، أو انقر لتحديد نقطة يدوياً.',
+              style: AppTextStyles.caption,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 220,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _pinOrCenter,
+                    initialZoom: 13,
+                    onTap: (tapPosition, point) async {
+                      setState(() {
+                        _lat = point.latitude;
+                        _lng = point.longitude;
+                        _coordsLabel =
+                            '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}\n(من الخريطة)';
+                      });
+                      try {
+                        final places = await geo.placemarkFromCoordinates(
+                          point.latitude,
+                          point.longitude,
+                        );
+                        if (places.isNotEmpty && mounted) {
+                          final p = places.first;
+                          final name = [p.locality, p.subAdministrativeArea, p.country]
+                              .where((e) => (e ?? '').isNotEmpty)
+                              .join('، ');
+                          if (name.isNotEmpty) {
+                            setState(() {
+                              _coordsLabel = '${_coordsLabel ?? ''}\n$name';
+                            });
+                          }
+                        }
+                      } catch (_) {}
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'isnad',
+                    ),
+                    if (_lat != null && _lng != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: LatLng(_lat!, _lng!),
+                            width: 44,
+                            height: 44,
+                            child: const Icon(
+                              Icons.location_pin,
+                              color: AppColors.statusSOS,
+                              size: 44,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             IsnadButton(
-              label: 'سحب الموقع الحالي',
+              label: 'تجديد الموقع وإرساله من GPS',
               variant: IsnadButtonVariant.outlinedGold,
               onPressed: _pullLocation,
             ),

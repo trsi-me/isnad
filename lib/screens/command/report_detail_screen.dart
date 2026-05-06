@@ -231,6 +231,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _kv('الرقم المرجعي', rep.displayReference),
                   _kv('المُبلِّغ', rep.reporterName),
                   _kv('الرقم العسكري', rep.militaryId),
                   _kv(
@@ -253,6 +254,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       child: Image.file(File(rep.mediaPath!), fit: BoxFit.cover),
                     ),
                   ],
+                  const SizedBox(height: 12),
+                  IsnadButton(
+                    label: 'تحليل ذكي لهذا البلاغ',
+                    variant: IsnadButtonVariant.outlinedGold,
+                    onPressed: () {
+                      if (rep.id == null) return;
+                      Navigator.of(context).pushNamed(
+                        '/ai_insights',
+                        arguments: {'reportId': rep.id},
+                      );
+                    },
+                  ),
                   const SizedBox(height: 12),
                   IsnadButton(
                     label: 'تحديث موقعي على الخريطة (معاينة)',

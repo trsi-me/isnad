@@ -121,6 +121,13 @@ class SoldierHomeScreen extends StatelessWidget {
                     onTap: () => Navigator.of(context).pushNamed('/report_status'),
                   ),
                   _HomeTile(
+                    label: 'تحليل ذكي',
+                    subtitle: 'ملخص البلاغات',
+                    icon: Icons.auto_awesome,
+                    iconColor: AppColors.goldLight,
+                    onTap: () => Navigator.of(context).pushNamed('/ai_insights'),
+                  ),
+                  _HomeTile(
                     label: 'محاضر الإصابة',
                     subtitle: 'سجلات طبية',
                     icon: Icons.description_outlined,
