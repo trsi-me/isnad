@@ -1,6 +1,7 @@
 # https://render.com/docs/blueprint-spec
-# نشر static لـ Flutter Web — الملفات جاهزة محلياً (لا build على Render)
-# الخطوات: flutter build web ← ثم نسخ build/web/* إلى deploy/web (أو deploy/copy_web.ps1)
+# نشر static لـ Flutter Web
+# تشغيل محلي: deploy/copy_web.ps1  (يبني ثم ينسخ) أو copy_web.ps1 -SkipBuild لو بُني مسبقاً
+# ليستبدل الموقع على Render: نفّذ copy_web.ps1 -Push  أو ادفع يدوياً بعد النسخ
 
 services:
   - type: web
